@@ -248,9 +248,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   card_docker_alive:{
-    margin: 5,
-    padding: 20,
-    borderRadius: 15,
+    marginHorizontal: 5,
+    marginVertical: 1,
+    borderRadius:5,
+    padding: 20, 
     backgroundColor: 'rgba(0, 255, 0, 0.2)', // Red background color
     shadowColor: '#000',
     shadowOffset: {
@@ -262,9 +263,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   card_docker_nolife:{
-    margin: 5,
-    padding: 20,
-    borderRadius: 15,
+    marginHorizontal: 5,
+    marginVertical: 1,
+    borderRadius:5,
+    padding: 20, 
     backgroundColor: 'rgba(255, 0, 0, 0.2)', // Red background color
     shadowColor: '#000',
     shadowOffset: {
