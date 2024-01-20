@@ -2,10 +2,16 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Dimensions, Modal, View, ScrollView, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { getToken, clearToken } from '../utils/authUtils';
 import { useNavigation } from '@react-navigation/native';
-import { setToken , selectToken, clearTokenRedux } from '../store/authSlice';
+import { setToken , selectToken, selectRole, clearTokenRedux } from '../store/authSlice';
 import store from '../store/store';
 import CustomAlert from './Modal/CustomAlert'; 
-const screenHeight = Dimensions.get('window').height;
+import CardDocker from '../components/CardDocker';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../type';
+import { useSelector } from 'react-redux';  
+
+const screenHeight = Dimensions.get('window').height; 
+
 
 interface SystemInfo {
   disk_usage: {
@@ -20,24 +26,20 @@ interface SystemInfo {
   };
 } 
 
+interface IService {
+  docker_id: string;
+  docker_image: string;
+  name: string;
+  port: string;
+}
 interface DockerInfo {
   alive: {
     count: number;
-    service: {
-      docker_id: string;
-      docker_image: string;
-      name: string;
-      port: string;
-    }[];
+    service: IService[];
   };
   nolife: {
     count: number;
-    service: {
-      docker_id: string;
-      docker_image: string;
-      name: string;
-      port: string;
-    }[];
+    service: IService[];
   };
 }
 
@@ -46,6 +48,9 @@ interface IProps {
 }
  
 const HomeScreen: React.FC<IProps> = ({}) => {
+
+  const role = useSelector(selectRole);
+
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [dockerInfo, setDockerInfo] = useState<DockerInfo | null>(null);
   const [isAliveOpen, setIsAliveOpen] = useState(false);
@@ -55,9 +60,13 @@ const HomeScreen: React.FC<IProps> = ({}) => {
   const [alertMessage, setAlertMessage] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const handleLogOut = async () => {
+    await clearToken(); // Assuming clearToken clears the user's session
+    store.dispatch(clearTokenRedux()); // Clear token in redux store
+    navigation.navigate('Main'); // Navigate to LoginScreen
+  };
 
-  const navigation = useNavigation();
- 
   const fetchData = async (url: string) => {
     try {
       const userToken = await getToken();
@@ -123,8 +132,7 @@ const HomeScreen: React.FC<IProps> = ({}) => {
         
         setAlertMessage(`Clear Cache Result: ${clear_cache_result}\nDocker Prune Result: ${docker_prune_result}`);
         setAlertVisible(true);
-      } else {
-        // Handle non-successful response (e.g., show an error message)
+      } else { 
         Alert.alert('Error', 'Failed to clear system resources.');
       }
     } catch (error) {
@@ -138,9 +146,30 @@ const HomeScreen: React.FC<IProps> = ({}) => {
     fetchAllInfo();
   }, [navigation]);
 
+  const handleDockerAction =  React.useCallback( async (service:IService, action:string) => {
+    if (action === 'restart') {
+      const userToken = await getToken();
+      const response = await fetch(`https://hubapi-manage-serv.hubexpress.co/restart_docker?docker_id=${service.docker_id}`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      }); 
 
+      if (response.ok) {
+        const data = await response.json(); // Parse the JSON response body
+        Alert.alert('Message', data.message); 
+      } else { 
+        Alert.alert('Error', 'Failed to restart container.');
+      }
+      
+    } else if (action === 'log') {
+      navigation.navigate('DockerLogScreen', { dockerId: service.docker_id }); 
+    }
+  },[]);
+   
   return (
-    <ScrollView refreshControl={
+    <ScrollView style={styles.scrollView}
+      refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -169,9 +198,15 @@ const HomeScreen: React.FC<IProps> = ({}) => {
           </>
         )}
 
+      
         <TouchableOpacity style={styles.card_btn} onPress={handleClear}>
-          <Text>Clear Temp</Text>
+          <Text style={{color:'white', fontWeight:'700'}}>Clear Temp</Text>
         </TouchableOpacity>
+        {role=='admin' && (
+          <TouchableOpacity style={styles.card_btn_cmd} onPress={()=> navigation.navigate('CommandScreen')}>
+            <Text style={{color:'green', fontWeight:'700'}}>Cmd</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View>
         <TouchableOpacity  style={styles.card_title}  onPress={() => setIsAliveOpen(!isAliveOpen)}>
@@ -179,14 +214,17 @@ const HomeScreen: React.FC<IProps> = ({}) => {
           <Text>count: {dockerInfo?.alive?.count}</Text>
         </TouchableOpacity> 
         {isAliveOpen &&
-         dockerInfo?.alive?.service?.map((service, index) => (
-          <View key={index} style={styles.card_docker_alive}>
-            <Text><Text style={{fontWeight:'bold'}} children={'Name:'}/> {service.name}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Docker ID:'}/> {service.docker_id}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Docker Image:'}/> {service.docker_image}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Port:'}/> {service.port}</Text>
-          </View>
-        ))}
+         dockerInfo?.alive?.service?.map((service, index) => <CardDocker key={index} 
+          onPress={() => Alert.alert(
+            `Docker ID: ${service.docker_id}`,
+            'Choose an action',
+            [
+              {text: 'Restart Now', onPress: () => handleDockerAction(service, 'restart')},
+              {text: 'Open Log', onPress: () => handleDockerAction(service, 'log')},
+              {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+            ],
+            { cancelable: true }
+          )} style={styles.card_docker_alive}  service={service} /> )}
       </View>
       <View> 
         <TouchableOpacity style={styles.card_title}  onPress={() => setIsNolifeOpen(!isNolifeOpen)}>
@@ -194,20 +232,27 @@ const HomeScreen: React.FC<IProps> = ({}) => {
           <Text>count: {dockerInfo?.nolife?.count}</Text>
         </TouchableOpacity> 
         {isNolifeOpen &&
-          dockerInfo?.nolife?.service?.map((service, index) => (
-          <View key={index} style={styles.card_docker_nolife}>
-            <Text><Text style={{fontWeight:'bold'}} children={'Name:'}/> {service.name}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Docker ID:'}/> {service.docker_id}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Docker Image:'}/> {service.docker_image}</Text>
-            <Text><Text style={{fontWeight:'bold'}} children={'Port:'}/> {service.port}</Text>
-          </View>
-        ))}
+          dockerInfo?.nolife?.service?.map((service, index) => <CardDocker key={index} 
+          onPress={() => Alert.alert(
+            `Docker ID: ${service.docker_id}`,
+            'Choose an action',
+            [
+              {text: 'Restart Now', onPress: () => handleDockerAction(service, 'restart')},
+              {text: 'Open Log', onPress: () => handleDockerAction(service, 'log')},
+              {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+            ],
+            { cancelable: true }
+          )} style={styles.card_docker_nolife}  service={service} />)}
       </View>
       <CustomAlert
         visible={alertVisible}
         message={alertMessage}
         onClose={() => setAlertVisible(false)}
       />
+       <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
+        <Text style={styles.logoutButtonText}>Log Out</Text>
+      </TouchableOpacity>
+    
     </ScrollView>
   );
 };
@@ -282,14 +327,29 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 50,
     borderRadius: 15,
-    backgroundColor: 'rgba(0, 255, 0, 0.7)', // Red background color
+    backgroundColor: 'rgba(0, 255, 140, 0.7)', // Red background color
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  card_btn_cmd:{
+    margin: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    borderRadius: 15,
+    backgroundColor: 'rgba(230, 255, 190, 0.8)', // Red background color
+    shadowColor: 'red',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
     elevation: 5,
   },
   card_title:{
@@ -305,7 +365,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  }
+  },
+  logoutButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    borderRadius: 15,
+    backgroundColor: 'black', // Black background color
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  logoutButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
 });
 
 export default HomeScreen;

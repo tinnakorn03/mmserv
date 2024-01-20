@@ -5,26 +5,25 @@ import axios from 'axios';
 import { getToken, setTokenStorage, clearToken } from '../utils/authUtils';
 import { useNavigation } from '@react-navigation/native';
 import { setToken , selectToken, clearTokenRedux} from '../store/authSlice'; 
-import store from '../store/store';
+import store from '../store/store'; 
 
 interface IProps {
   
 }
 const LoginScreen: React.FC<IProps> = () => {
-  const [username, setUsername] = useState('hub@ad_min');
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('hub@pass4321!');
   const navigation = useNavigation();
 
   const handleLogin = async () => {
-    try {
+    try { 
       const response = await axios.post('https://hubapi-manage-serv.hubexpress.co/token', {
         username,
         password,
       });
       const { access_token } = response.data;
       await setTokenStorage({access_token})    
-      store.dispatch(setToken(access_token));
-      // navigation.navigate('Home');
+      store.dispatch(setToken(access_token)); 
     } catch (error) {
       Alert.alert('Login failed', 'Invalid credentials');
     }

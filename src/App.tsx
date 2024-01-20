@@ -5,6 +5,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Provider } from 'react-redux'; 
 import store from './store/store'; 
 import MainComponent from './MainComponent'; 
+import DockerLogScreen from './screens/DockerLogScreen';
+import CommandScreen from './screens/CommandScreen';
 import {
   SafeAreaView,
   ScrollView,
@@ -18,9 +20,10 @@ import {
 import {
   Colors, 
 } from 'react-native/Libraries/NewAppScreen';
+import { RootStackParamList } from './type';
 
-const Stack = createStackNavigator();
- 
+const Stack = createStackNavigator<RootStackParamList>();
+
 function App(): React.JSX.Element { 
   const isDarkMode = useColorScheme() === 'dark';
   
@@ -34,6 +37,12 @@ function App(): React.JSX.Element {
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen name="Main" component={MainComponent} options={{ headerShown: false }}/>
+            <Stack.Screen 
+              name="DockerLogScreen" 
+              component={DockerLogScreen} 
+              options={{ headerShown: false, presentation: 'modal' }} 
+            />
+            <Stack.Screen name="CommandScreen" component={CommandScreen} options={{ headerShown: false }}/> 
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView> 
