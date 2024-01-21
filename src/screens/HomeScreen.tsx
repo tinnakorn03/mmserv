@@ -132,6 +132,7 @@ const HomeScreen: React.FC<IProps> = ({}) => {
         
         setAlertMessage(`Clear Cache Result: ${clear_cache_result}\nDocker Prune Result: ${docker_prune_result}`);
         setAlertVisible(true);
+        fetchAllInfo();
       } else { 
         Alert.alert('Error', 'Failed to clear system resources.');
       }

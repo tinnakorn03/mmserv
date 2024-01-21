@@ -91,10 +91,8 @@ const CommandScreen: React.FC<IProps> = ({
                             <Text style={styles.executeButtonText}>Execute</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
-
-            </View>
-
+                </View> 
+            </View> 
         </KeyboardAvoidingView>
     )
 
@@ -131,30 +129,33 @@ const styles = StyleSheet.create({
         // top:-2, 
     },
     inputRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between', 
-        width:'100%',
-        paddingBottom:25
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center', 
+      backgroundColor:'rgba(140, 155, 190, 0.2)',
+      width:'100%',
+      paddingHorizontal:10,
+      borderTopLeftRadius:10,
+      borderTopRightRadius:10,
+      paddingBottom:25
     },
-    commandInput: {
-      color: 'whitesmoke',
-      borderColor: 'gray',
+    commandInput: {  
+      borderColor:'rgba(255, 255, 255, 0.3)',
+      color:'rgba(255, 255, 255, 0.8)',
       borderWidth: 0.5, 
       padding: 10,
       width:'80%',
       borderRadius:10,
     },
     button: {
-        backgroundColor: 'blue', 
-        paddingVertical: 8,
-        alignItems: 'center',
-        width:'100%',
-        borderRadius:10,
-
+      backgroundColor: 'tomato', 
+      paddingVertical: 8,
+      alignItems: 'center',
+      width:'100%',
+      borderRadius:10, 
     },
     executeButton: {
-      padding: 10,
+      padding: 5,
       alignItems: 'center',
       width:'20%', 
     },
