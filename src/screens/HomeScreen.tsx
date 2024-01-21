@@ -84,8 +84,7 @@ const HomeScreen: React.FC<IProps> = ({}) => {
         throw new Error('Network response was not ok');
       }
       return await response.json();
-    } catch (error) {
-      console.error('Fetch Error:', error);
+    } catch (error) { 
       Alert.alert('Error', 'Failed to fetch data.');
       return null;
     }
@@ -182,6 +181,9 @@ const HomeScreen: React.FC<IProps> = ({}) => {
         </View>
       )}
        <View style={styles.container}>
+        <View style={{width:'100%',flexDirection:'row',alignItems:'center',justifyContent:'flex-start', paddingHorizontal:10}}>
+          <Text style={{fontSize:20, fontWeight:'800',alignSelf:'flex-start', paddingVertical:5}} children={'VM 1: 203.151.249.251'}/>
+        </View>
         {systemInfo && (
           <>
             <View style={styles.card}> 
